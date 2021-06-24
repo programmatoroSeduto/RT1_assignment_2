@@ -32,8 +32,8 @@ commands_info = [ "", \
   "ask to the user a position, then try and reach it. ", \
   "use the component wall_follower.", \
   "Stop any ongoing movement", \
-  "select your motion planning algorithm between 'move_base' and 'bug0'", 
-  "print this help", 
+  "select your motion planning algorithm between 'move_base' and 'bug0'", \
+  "print this help", \
   "Close this program." ]
 
 ## last command index
@@ -61,14 +61,13 @@ def reach_random_pos():
 	
 	if reach_random_pos_active:
 		# the service is already active
-		rospy.logwarn( " [%] ATTENTION: each_random_pos already active. ", node_name )
+		rospy.logwarn( " [%s] ATTENTION: each_random_pos already active. ", node_name )
 	else:
-		 if robot_busy:
+		if robot_busy:
 			# you cannot call this command when the robot is busy
 			# before calling this, please turn off the previous operation
-			rospy.logwarn( " [%] ATTENTION: another algorithm is running actually. ", node_name )
+			rospy.logwarn( " [%s] ATTENTION: another algorithm is running actually. ", node_name )
 			print( "\nPlease turn off the previous one before calling this command. " )
-			pass
 		else:
 			# activate the service 'reach_random_pos_service'
 			srv_reach_random_pos_switch( True )
@@ -77,7 +76,7 @@ def reach_random_pos():
 			robot_busy = True
 			reach_random_pos_active = True
 			
-			rospy.loginfo( " [%] reach_random_pos is ON. ", node_name )
+			rospy.loginfo( " [%s] reach_random_pos is ON. ", node_name )
 
 
 
@@ -147,7 +146,7 @@ def print_help():
 	print( "\nAvailable commands:" )
 	
 	for i in range( 1, len( commands ) ):
-		print( "\t [" + i + "] " + commands[i] + ":" )
+		print( "\t [" + str(i) + "] " + commands[i] + ":" )
 		print( "\t\t" + commands_info[i] )
 
 
@@ -242,7 +241,7 @@ def cbk_on_shutdown():
 	This is called on the shutdown of the node. 
 	'''
 	global node_name
-	rospy.loginfo( " [%s] closing...", node_name )
+	rospy.loginfo( " [%s] is OFFLINE", node_name )
 
 
 
@@ -251,20 +250,21 @@ if __name__ == "__main__":
 	rospy.on_shutdown( cbk_on_shutdown )
 	
 	# require the server 'wall_follower_switch'
-	rospy.loginfo( " [%] getting service %s ...", node_name, name_wall_follower_switch )
+	rospy.loginfo( " [%s] getting service %s ...", node_name, name_wall_follower_switch )
 	rospy.wait_for_service( name_wall_follower_switch )
 	srv_wall_follower_switch = rospy.ServiceProxy( name_wall_follower_switch, SetBool )
-	rospy.loginfo( " [%] service %s ... OK", node_name, name_wall_follower_switch )
+	rospy.loginfo( " [%s] service %s ... OK", node_name, name_wall_follower_switch )
 	
 	# service 'reach_random_pos_switch'
-	rospy.loginfo( " [%] getting service %s ...", node_name, name_reach_random_pos_switch )
+	rospy.loginfo( " [%s] getting service %s ...", node_name, name_reach_random_pos_switch )
 	rospy.wait_for_service( name_reach_random_pos_switch )
 	srv_reach_random_pos_switch = rospy.ServiceProxy( name_reach_random_pos_switch, switch_service )
-	rospy.loginfo( " [%] service %s ... OK", node_name, name_reach_random_pos_switch )
+	rospy.loginfo( " [%s] service %s ... OK", node_name, name_reach_random_pos_switch )
 	
 	try:
+		rospy.loginfo( " [%s] is ONLINE", node_name )
 		main()
 	except rospy.ROSException:
 		# ... properly manage the exception
 		# https://docs.python.org/3/tutorial/errors.html
-		rospy.loginfo( " [user console] Raised an Exception ... " )
+		rospy.loginfo( " [%s] Raised an Exception ... ", node_name )

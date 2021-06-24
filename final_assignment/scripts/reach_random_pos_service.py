@@ -4,8 +4,9 @@ import rospy
 from final_assignment.srv import switch_service, switch_serviceRequest, switch_serviceResponse
 from final_assignment.srv import check_position, check_positionRequest, check_positionResponse
 from final_assignment.srv import get_point, get_pointRequest, get_pointResponse
+from final_assignment.srv import reach_random_pos_status, reach_random_pos_statusRequest, reach_random_pos_statusResponse
 from move_base_msgs.msg import MoveBaseActionGoal
-from geometry_msgs import Point
+from geometry_msgs.msg import Point
 
 # --------------------------------- DATA
 
@@ -14,6 +15,10 @@ node_name = "reach_random_pos_service"
 
 
 ## name of the service 'reach_random_pos_status'
+name_reach_random_pos_status = "/reach_random_pos_status"
+
+
+## name of the service 'reach_random_pos_switch'
 name_reach_random_pos_switch = "/reach_random_pos_switch"
 
 
@@ -76,6 +81,7 @@ def update_current_position( ):
 	if is_moving:
 		# require an update
 		req = check_positionRequest( )
+		
 		req.check_only = False
 		req.tol = min_distance_from_the_target
 		req.target = target_position
@@ -186,6 +192,29 @@ def srv_reach_random_pos_switch( data ):
 
 
 
+def srv_reach_random_pos_status( data ):
+	'''
+	Return the status of this service node
+	'''
+	global service_active, actual_position, target_position, last_response_check_pos, signal_last_pos
+	
+	msg = reach_random_pos_statusResponse( )
+	
+	msg.is_active = service_active
+	
+	if target_position is not None:
+		msg.target = target_position
+	else:
+		msg.target = Point()
+	
+	msg.distance = last_response_check_pos.distance 
+	msg.actual_position = actual_position
+	msg.last_pos_signal = signal_last_pos
+	
+	return msg
+
+
+
 # --------------------------------- TOPICS
 
 ## ...
@@ -198,7 +227,7 @@ def main():
 	'''
 	some word about the main function.
 	'''
-	global service_active, cycle_time, target_position
+	global service_active, cycle_time, target_position, is_moving
 	global name_get_point, srv_get_point
 	global last_response_check_pos, signal_last_pos
 	
@@ -247,7 +276,7 @@ def cbk_on_shutdown():
 	'''
 	This is called on the shutdown of the node. 
 	'''
-	rospy.loginfo( " [%s] closing...", node_name )
+	rospy.loginfo( " [%s] is OFFLINE", node_name )
 
 
 
@@ -256,31 +285,37 @@ if __name__ == "__main__":
 	rospy.init_node( node_name )
 	rospy.on_shutdown( cbk_on_shutdown )
 	
-	# require the server 'check_position'
-	rospy.loginfo( " [%] advertising service %s ...", node_name, name_reach_random_pos_status )
+	# require the server 'reach_random_pos_status'
+	rospy.loginfo( " [%s] advertising service %s ...", node_name, name_reach_random_pos_status )
 	rospy.Service( name_reach_random_pos_status, reach_random_pos_status, srv_reach_random_pos_status )
-	rospy.loginfo( " [%] service %s ... OK", node_name, name_reach_random_pos_status )
+	rospy.loginfo( " [%s] service %s ... OK", node_name, name_reach_random_pos_status )
 	
 	# service 'check_position'
-	rospy.loginfo( " [%] getting service %s ...", node_name, name_check_position )
+	rospy.loginfo( " [%s] getting service %s ...", node_name, name_check_position )
 	rospy.wait_for_service( name_check_position )
 	srv_check_position = rospy.ServiceProxy( name_check_position, check_position )
-	rospy.loginfo( " [%] service %s ... OK", node_name, name_check_position )
+	rospy.loginfo( " [%s] service %s ... OK", node_name, name_check_position )
 	
 	# service 'get_point'
-	rospy.loginfo( " [%] getting service %s ...", node_name, name_get_point )
+	rospy.loginfo( " [%s] getting service %s ...", node_name, name_get_point )
 	rospy.wait_for_service( name_get_point )
 	srv_get_point = rospy.ServiceProxy( name_get_point, get_point )
-	rospy.loginfo( " [%] service %s ... OK", node_name, name_get_point )
+	rospy.loginfo( " [%s] service %s ... OK", node_name, name_get_point )
 	
 	# require the topic 'move_base/goal'
-	rospy.loginfo( " [%] topic (out) %s ...", node_name name_move_base )
+	rospy.loginfo( " [%s] topic (out) %s ...", node_name, name_move_base )
 	topic_move_base = rospy.Publisher( name_move_base, MoveBaseActionGoal, queue_size=1 )
-	rospy.loginfo( " [%] topic (out) %s ... OK", node_name name_move_base )
+	rospy.loginfo( " [%s] topic (out) %s ... OK", node_name, name_move_base )
+	
+	# service 'reach_random_pos_switch'
+	rospy.loginfo( " [%s] getting service %s ...", node_name, name_reach_random_pos_switch )
+	rospy.Service( name_reach_random_pos_switch, switch_service, srv_reach_random_pos_switch )
+	rospy.loginfo( " [%s] service %s ... OK", node_name, name_reach_random_pos_switch )
 	
 	try:
+		rospy.loginfo( " [%s] is ONLINE", node_name )
 		main()
 	except rospy.ROSException:
 		# ... properly manage the exception
 		# https://docs.python.org/3/tutorial/errors.html
-		rospy.loginfo( " [user console] Raised an Exception ... " )
+		rospy.loginfo( " [%s] Raised an Exception ... ", node_name )

@@ -66,9 +66,11 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 add_service_files(
   FILES
+  check_position.srv
   get_point.srv
   position_defined.srv
-  check_position.srv
+  reach_random_pos_status.srv
+  switch_service.srv
 )
 
 ## Generate actions in the 'action' folder

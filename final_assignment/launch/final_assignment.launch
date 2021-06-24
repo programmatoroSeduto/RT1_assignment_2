@@ -1,9 +1,10 @@
 <launch>
 	<!-- other components -->
-	<node pkg="final_assignment" name="wall_follow_service_m" type="wall_follow_service_m.py" required="true" />
+	<node pkg="final_assignment" name="wall_follow_service_m" type="wall_follow_service_m.py" required="true" output="screen" />
 	
 	<!-- nodes of the final assignment -->
-	<node pkg="final_assignment" name="check_position" type="check_position.py" required="true" />
-	<node pkg="final_assignment" name="points_manager" type="points_manager.py" required="true" />
+	<node pkg="final_assignment" name="check_position" type="check_position.py" required="true" output="screen" />
+	<node pkg="final_assignment" name="points_manager" type="points_manager.py" required="true" output="screen" />
+	<node pkg="final_assignment" name="reach_random_pos_service" type="reach_random_pos_service.py" required="true" output="screen" />
 	<node pkg="final_assignment" name="user_console" type="user_console.py" output="screen" required="true" />
 </launch>

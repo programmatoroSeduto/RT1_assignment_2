@@ -34,7 +34,7 @@ def srv_check_position( data ):
 		target = data.target
 		if ( data.tol > 0 ):
 			to_return.distance = ( ( target.x - actual_pose.position.x )**2 + ( target.y - actual_pose.position.y )**2 )
-			to_return.reached = ( data.distance <= data.tol )
+			to_return.reached = ( to_return.distance <= data.tol )
 			to_return.success = True
 			to_return.actual_position = actual_pose.position
 		else:
