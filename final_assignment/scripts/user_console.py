@@ -19,7 +19,7 @@ name_wall_follower_switch = "/wall_follower_switch"
 ## name of the service 'reach_random_pos_switch'
 name_reach_random_pos_switch = "/reach_random_pos_switch"
 
-# name of the service 'user_target'
+## name of the service 'user_target'
 name_user_target = "/user_target"
 
 ## name of the service 'position_defined'
@@ -54,6 +54,9 @@ robot_busy = False
 ## is reach_random_pos active?
 reach_random_pos_active = False
 
+## is wall follow active?
+wall_follow_active = False
+
 
 
 
@@ -75,8 +78,8 @@ def reach_random_pos():
 		if robot_busy:
 			# you cannot call this command when the robot is busy
 			# before calling this, please turn off the previous operation
-			rospy.logwarn( " [%s] ATTENTION: another algorithm is running actually. ", node_name )
-			print( "\n\tPlease turn off the previous command (use last_pos) before calling this one. " )
+			rospy.logwarn( " [%s] ATTENTION: the robot is busy! ", node_name )
+			print( "\tPlease turn off the previous command (use last_pos) before calling this one. " )
 		else:
 			# activate the service 'reach_random_pos_service'
 			srv_reach_random_pos_switch( True )
@@ -124,6 +127,12 @@ def reach_user_pos():
 	global node_name
 	global name_position_defined, srv_position_defined
 	global name_user_target, srv_user_target
+	global robot_busy
+	
+	if robot_busy:
+		rospy.logwarn( " [%s] ATTENTION: the robot is busy now! ", node_name )
+		print( "\tPlease turn off the previous command (use last_pos) before calling this one. " )
+		return
 	
 	# ask the user for a target
 	rospy.loginfo( " [user console] Give me a target:" )
@@ -143,23 +152,29 @@ def reach_user_pos():
 
 
 
-def wall_follow():
+def wall_follow( val=True ):
 	'''activate/deactivate the wall follower.
-
+		\param val (bool; default: True) the state of the wall follow service
 	'''
 	global node_name
 	global name_wall_follower_switch, srv_wall_follower_switch
+	global robot_busy, wall_follow_active
 	
-	# activate the wall_follow service
-	srv_wall_follower_switch( True )
+	if val and robot_busy:
+		if wall_follow_active:
+			rospy.loginfo( " [%s] wall_follow already active. ", node_name )
+		else:
+			rospy.logwarn( " [%s] ATTENTION: the robot is busy now! ", node_name )
+			print( "\tPlease turn off the previous command (use last_pos) before calling this one. " )
+		
+		return
 	
-	# wait
-	rospy.loginfo( " [user console] wall_follower active! Press enter to stop." )
-	input( "" )
+	srv_wall_follower_switch( val )
 	
-	# stop the wall follower
-	srv_wall_follower_switch( False )
-	rospy.loginfo( " [user console] wall_follower stopped. " )
+	wall_follow_active = val
+	robot_busy = val
+	
+	rospy.loginfo( " [%s] wall follow is %s ", node_name, ( "ON" if val else "OFF" ) )
 
 
 
@@ -169,11 +184,15 @@ def last_pos():
 	'''
 	global node_name
 	global robot_busy
-	global reach_random_pos_active
+	global reach_random_pos_active, wall_follow_active
 	
 	if robot_busy:
 		if reach_random_pos_active:
 			stop_reach_random_pos( )
+			
+		elif wall_follow_active:
+			wall_follow( False )
+			
 	else:
 		# nothing to stop
 		rospy.logwarn( " [%s] WARNING: no activity to stop. ", node_name )
@@ -199,7 +218,7 @@ def print_help():
 	print( "\nAvailable commands:" )
 	
 	for i in range( 1, len( commands ) ):
-		print( "\t [" + str(i) + "] " + commands[i] + ":" )
+		print( "\t [no." + str(i) + "] " + commands[i] + ":" )
 		print( "\t\t" + commands_info[i] )
 
 
@@ -233,7 +252,7 @@ srv_position_defined = None
 # --------------------------------- WORKING CYCLE
 
 def main():
-	'''Ask to the user the next command. 
+	'''Ask the next command to the user
 
 	'''
 	global node_name
@@ -338,4 +357,4 @@ if __name__ == "__main__":
 	except rospy.ROSException:
 		# ... properly manage the exception
 		# https://docs.python.org/3/tutorial/errors.html
-		rospy.loginfo( " [%s] Raised an Exception ... ", node_name )
+		rospy.logwarn( " [%s] Raised an Exception ... ", node_name )
