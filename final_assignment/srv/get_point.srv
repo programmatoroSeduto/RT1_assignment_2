@@ -1,6 +1,9 @@
-# service: get point
-# msg: get_point.srv
+# servicefile name 'get_point.srv'
+
 
 #...empty...
+
 ---
+
+# the point, randomly choosen
 geometry_msgs/Point position

@@ -1,6 +1,10 @@
-# service: position_defined
-# msg: position_defined.srv
+# service file name 'position_defined.srv'
 
+
+# the position you want to check
 geometry_msgs/Point position
+
 ---
+
+# is it in the set?
 bool defined

@@ -4,6 +4,8 @@
 import rospy
 from final_assignment.srv import switch_service, switch_serviceRequest, switch_serviceResponse
 from final_assignment.srv import check_position, check_positionRequest, check_positionResponse
+from final_assignment.srv import get_point, get_pointRequest, get_pointResponse
+from move_base_msgs.msg import MoveBaseActionGoal
 from geometry_msgs import Point
 
 # --------------------------------- DATA
@@ -15,26 +17,42 @@ node_name = "reach_random_pos_service"
 ## name of the service 'reach_random_pos_status'
 name_reach_random_pos_switch = "/reach_random_pos_switch"
 
+
 ## name of the service 'check_position'
 name_check_position = "/check_position"
+
+
+## name of the service 'get_point'
+name_get_point = "/get_point"
+
+
+## name of the topic 'move_base/goal' (Publisher)
+name_move_base = "/move_base/goal"
+
+## handler topic 'move_base/goal' (Publisher)
+topic_move_base = None
+
 
 ## status of the node (bool; default: False)
 service_active = False
 
+## the robot is moving (bool; default: False)
+is_moving = False
+
 ## last pos signal received (bool; default: False)
 signal_last_pos = False
 
-## the robot is moving (bool; default: False)
-is_moving = False
 
 ## actual position of the robot (geometry_msgs/Point)
 actual_position = Point( )
 
+## the target position (geometry_msgs/Point; default: None)
+target_position = None
+
+
 ## response from the service 'check_position' (final_assignment/check_position)
 last_response_check_pos = check_positionResponse( )
 
-## the target position (geometry_msgs/Point)
-target_position = Point( )
 
 ## tolerance on the distance from the target
 min_distance_from_the_target = 2
@@ -73,10 +91,52 @@ def update_current_position( ):
 
 
 
+def clear_status( ):
+	'''
+	not is_moving
+	not signal_last_pos
+	target_pos None
+	'''
+	global is_moving, signal_last_pos, target_position
+	
+	is_moving = False
+	signal_last_pos = False
+	target_position = None
+	
+	pass
+
+
+
+def get_new_target_from_move_base( ):
+	'''
+		ask a new randomly-choosen target to the server points_manager
+		then send to MoveBase the target to reach 
+	'''
+	global name_get_point, srv_get_point
+	global name_move_base, srv_move_base
+	global target_position
+	
+	# ge the new target
+	target_position = ( srv_get_point( ) ).position
+	
+	# send it to move_base
+	msg = MoveBaseActionGoal( )
+	msg.goal.target_pose.header.frame_id = 'map'
+	msg.goal.target_pose.pose.position.x = target_position.x
+	msg.goal.target_pose.pose.position.y = target_position.y
+	msg.goal.target_pose.pose.orientation.w = 1.0
+
+	topic_move_base.publish(msg)
+
+
+
 # --------------------------------- SERVICES
 
 ## call-point of the service 'check_position'
 srv_check_position = None
+
+## call-point of the service 'get_point'
+srv_get_point = None
 
 
 
@@ -85,25 +145,44 @@ def srv_reach_random_pos_switch( data ):
 		
 		\param data (final_assignment/switch_service)
 	'''
-	global service_active
+	global service_active, signal_last_pos, is_moving
+	
+	response = switch_serviceResponse()
 	
 	if data.val:
-		''' TODO
-			if the service is active, 
-				signal_last_pos false
-				return succcess
-			else
-				activate the service
-				return success
-		'''
-		pass
+		# i want to turn on the service
+		if service_active:
+			# turn off any last pos signals
+			signal_last_pos = False
+		else:
+			# activate the service
+			service_active = True
+		
+		response.success = True
+		response.in_progress = False
+		
 	else:
-		'''TODO
-			if the service is active, 
-				signal_last_pos true
-				if the robot is moving, return not success, in progress
-		'''
-		pass
+		# i want to turn off the service
+		if service_active:
+			if is_moving:
+				# signal last pos
+				signal_last_pos = True
+				
+				# request in progress
+				response.in_progress = True
+				response.success = False
+			else:
+				# clear the status and turn off
+				#    already done from the while cycle
+				response.success = True
+				response.in_progress = False
+		else:
+			# you're trying to turn off an already turned off service
+			#    the server was turned off
+			response.success = True
+			response.in_progress = False
+	
+	return response
 
 
 
@@ -133,15 +212,44 @@ def main():
 	'''
 	some word about the main function.
 	'''
-	global service_active, cycle_time
+	global service_active, cycle_time, target_position
+	global name_get_point, srv_get_point
+	global last_response_check_pos, signal_last_pos
+	
 	
 	while not rospy.is_shutdown( ):
+		
 		# update the current position
 		update_current_position( )
 		
-		if service_active:
-			# TODO update depending on the state of the robot 
-			pass
+		if not service_active:
+			# do nothing
+			rospy.sleep( cycle_time )
+			continue
+		
+		if not is_moving:
+			if signal_last_pos:
+				# last pos signal received
+				#   target reached
+				#   clear the node and deactivate it
+				clear_status( )
+				
+				service_active = False
+			else:
+				# need for a new target
+				get_new_target_from_move_base()
+				
+				# the robot starts to move
+				is_moving = True
+				
+		else:
+			# check the progress towards the target
+			if last_response_check_pos.reached:
+				# stop the movement
+				is_moving = False
+			else:
+				# do nothing
+				pass
 		
 		rospy.sleep( cycle_time )
 
@@ -161,6 +269,17 @@ if __name__ == "__main__":
 	rospy.wait_for_service( name_check_position )
 	srv_check_position = rospy.ServiceProxy( name_check_position, check_position )
 	rospy.loginfo( " [%] service %s ... OK", node_name, name_check_position )
+	
+	# service 'get_point'
+	rospy.loginfo( " [%] getting service %s ...", node_name, name_get_point )
+	rospy.wait_for_service( name_get_point )
+	srv_get_point = rospy.ServiceProxy( name_get_point, get_point )
+	rospy.loginfo( " [%] service %s ... OK", node_name, name_get_point )
+	
+	# require the topic 'move_base/goal'
+	rospy.loginfo( " [%] topic (out) %s ...", node_name name_move_base )
+	topic_move_base = rospy.Publisher( name_move_base, MoveBaseActionGoal, queue_size=1 )
+	rospy.loginfo( " [%] topic (out) %s ... OK", node_name name_move_base )
 	
 	try:
 		main()
