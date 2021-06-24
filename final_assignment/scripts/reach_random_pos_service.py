@@ -157,6 +157,7 @@ def srv_reach_random_pos_switch( data ):
 			# activate the service
 			service_active = True
 		
+		# in any case, return this:
 		response.success = True
 		response.in_progress = False
 		

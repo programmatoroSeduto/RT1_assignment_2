@@ -2,6 +2,7 @@
 
 import rospy
 from std_srvs.srv import SetBool
+from final_assignment.srv import switch_service, switch_serviceRequest, switch_serviceResponse
 
 
 # --------------------------------- DATA
@@ -11,6 +12,9 @@ node_name = "user_console"
 
 ## name of the server 'wall_follower_switch'
 name_wall_follower_switch = "/wall_follower_switch"
+
+## name of the service 'reach_random_pos_switch'
+name_reach_random_pos_switch = "/reach_random_pos_switch"
 
 ## available commands
 commands = [ "", \
@@ -35,6 +39,12 @@ commands_info = [ "", \
 ## last command index
 last_command_idx = -1
 
+## is there any movement ongoing?
+robot_busy = False
+
+## is reach_random_pos active?
+reach_random_pos_active = False
+
 
 
 
@@ -45,7 +55,29 @@ def reach_random_pos():
 	''' activate the node 'reach_random_pos_service.py'.
 		\TODO integration with bug0
 	'''
-	pass
+	global node_name
+	global reach_random_pos_active, robot_busy
+	global name_reach_random_pos_switch, srv_reach_random_pos_switch
+	
+	if reach_random_pos_active:
+		# the service is already active
+		rospy.logwarn( " [%] ATTENTION: each_random_pos already active. ", node_name )
+	else:
+		 if robot_busy:
+			# you cannot call this command when the robot is busy
+			# before calling this, please turn off the previous operation
+			rospy.logwarn( " [%] ATTENTION: another algorithm is running actually. ", node_name )
+			print( "\nPlease turn off the previous one before calling this command. " )
+			pass
+		else:
+			# activate the service 'reach_random_pos_service'
+			srv_reach_random_pos_switch( True )
+			
+			# set the robot as busy
+			robot_busy = True
+			reach_random_pos_active = True
+			
+			rospy.loginfo( " [%] reach_random_pos is ON. ", node_name )
 
 
 
@@ -53,6 +85,7 @@ def reach_user_pos():
 	''' ask to the user a position to reach, then reach it
 		
 	'''
+	global node_name
 	pass
 
 
@@ -61,6 +94,7 @@ def wall_follow():
 	'''activate/deactivate the wall follower.
 		
 	'''
+	global node_name
 	pass
 
 
@@ -69,6 +103,7 @@ def wall_follow():
 	'''activate/deactivate the wall follower.
 
 	'''
+	global node_name
 	global name_wall_follower_switch, srv_wall_follower_switch
 	
 	# activate the wall_follow service
@@ -88,6 +123,7 @@ def last_pos():
 	'''stop the ongoing movement, if any
 		
 	'''
+	global node_name
 	pass
 
 
@@ -96,6 +132,7 @@ def change_motion_planning_algorithm():
 	'''select a motion planning algorithm.
 
 	'''
+	global node_name
 	pass
 
 
@@ -104,12 +141,13 @@ def print_help():
 	'''print a help on the screen.
 
 	'''
+	global node_name
 	global commands, commands_info
 	
 	print( "\nAvailable commands:" )
 	
 	for i in range( 1, len( commands ) ):
-		print( "\t" + commands[i] + ":" )
+		print( "\t [" + i + "] " + commands[i] + ":" )
 		print( "\t\t" + commands_info[i] )
 
 
@@ -118,6 +156,9 @@ def print_help():
 
 # call point of the server 'wall_follower_switch'
 srv_wall_follower_switch = None
+
+## call-point of the service 'reach_random_pos_switch'
+srv_reach_random_pos_switch = None
 
 
 
@@ -137,6 +178,7 @@ def main():
 	'''Ask to the user the next command. 
 
 	'''
+	global node_name
 	global commands, last_command_idx
 	
 	print( "\n\tready!\n" )
@@ -199,6 +241,7 @@ def cbk_on_shutdown():
 	'''
 	This is called on the shutdown of the node. 
 	'''
+	global node_name
 	rospy.loginfo( " [%s] closing...", node_name )
 
 
@@ -208,12 +251,16 @@ if __name__ == "__main__":
 	rospy.on_shutdown( cbk_on_shutdown )
 	
 	# require the server 'wall_follower_switch'
-	'''
 	rospy.loginfo( " [%] getting service %s ...", node_name, name_wall_follower_switch )
 	rospy.wait_for_service( name_wall_follower_switch )
 	srv_wall_follower_switch = rospy.ServiceProxy( name_wall_follower_switch, SetBool )
 	rospy.loginfo( " [%] service %s ... OK", node_name, name_wall_follower_switch )
-	'''
+	
+	# service 'reach_random_pos_switch'
+	rospy.loginfo( " [%] getting service %s ...", node_name, name_reach_random_pos_switch )
+	rospy.wait_for_service( name_reach_random_pos_switch )
+	srv_reach_random_pos_switch = rospy.ServiceProxy( name_reach_random_pos_switch, switch_service )
+	rospy.loginfo( " [%] service %s ... OK", node_name, name_reach_random_pos_switch )
 	
 	try:
 		main()
