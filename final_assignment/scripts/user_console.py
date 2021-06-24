@@ -67,7 +67,7 @@ def reach_random_pos():
 			# you cannot call this command when the robot is busy
 			# before calling this, please turn off the previous operation
 			rospy.logwarn( " [%s] ATTENTION: another algorithm is running actually. ", node_name )
-			print( "\nPlease turn off the previous one before calling this command. " )
+			print( "\n\tPlease turn off the previous command (use last_pos) before calling this one. " )
 		else:
 			# activate the service 'reach_random_pos_service'
 			srv_reach_random_pos_switch( True )
@@ -76,7 +76,35 @@ def reach_random_pos():
 			robot_busy = True
 			reach_random_pos_active = True
 			
-			rospy.loginfo( " [%s] reach_random_pos is ON. ", node_name )
+			rospy.loginfo( " [%s] reach_random_pos STARTED. ", node_name )
+
+
+
+def stop_reach_random_pos( ):
+	'''
+		stop the activity 'reach_random_pos'
+	'''
+	global robot_busy, reach_random_pos_active
+	
+	# send the stop signal to the node
+	rospy.loginfo( " [%s] sending the stop signal... ", node_name )
+	res = srv_reach_random_pos_switch( False )
+	
+	# then wait for the robot to reach the final position
+	if res.success:
+		# immediate end of the activity
+		pass
+	else:
+		# wait until the robot has reached the position
+		rospy.loginfo( " [%s] waiting for the robot to end the path... ", node_name )
+		while res.in_progress:
+			rospy.sleep( rospy.Duration( 0, 500 ) )
+			res = srv_reach_random_pos_switch( False )
+	
+	robot_busy = False
+	reach_random_pos_active = False
+	
+	rospy.loginfo( " [%s] reach_random_pos STOPPED. ", node_name )
 
 
 
@@ -123,7 +151,15 @@ def last_pos():
 		
 	'''
 	global node_name
-	pass
+	global robot_busy
+	global reach_random_pos_active
+	
+	if robot_busy:
+		if reach_random_pos_active:
+			stop_reach_random_pos( )
+	else:
+		# nothing to stop
+		rospy.logwarn( " [%s] WARNING: no activity to stop. ", node_name )
 
 
 
