@@ -71,6 +71,7 @@ add_service_files(
   position_defined.srv
   reach_random_pos_status.srv
   switch_service.srv
+  user_target.srv
 )
 
 ## Generate actions in the 'action' folder

@@ -3,6 +3,9 @@
 import rospy
 from std_srvs.srv import SetBool
 from final_assignment.srv import switch_service, switch_serviceRequest, switch_serviceResponse
+from final_assignment.srv import user_target, user_targetRequest, user_targetResponse
+from final_assignment.srv import position_defined, position_definedRequest, position_definedResponse
+from geometry_msgs.msg import Point
 
 
 # --------------------------------- DATA
@@ -15,6 +18,12 @@ name_wall_follower_switch = "/wall_follower_switch"
 
 ## name of the service 'reach_random_pos_switch'
 name_reach_random_pos_switch = "/reach_random_pos_switch"
+
+# name of the service 'user_target'
+name_user_target = "/user_target"
+
+## name of the service 'position_defined'
+name_position_defined = "/position_defined"
 
 ## available commands
 commands = [ "", \
@@ -113,16 +122,24 @@ def reach_user_pos():
 		
 	'''
 	global node_name
-	pass
-
-
-
-def wall_follow():
-	'''activate/deactivate the wall follower.
-		
-	'''
-	global node_name
-	pass
+	global name_position_defined, srv_position_defined
+	global name_user_target, srv_user_target
+	
+	# ask the user for a target
+	rospy.loginfo( " [user console] Give me a target:" )
+	print( "available: [(-4,-3);(-4,2);(-4,7);(5,-7);(5,-3);(5,1)]" )
+	target = Point()
+	target.x = float(input( "\tx : " ))
+	target.y = float(input( "\ty : " ))
+	
+	# check the position
+	res = srv_position_defined( target )
+	if res.defined :
+		rospy.loginfo( " [user console] selected: ( %f, %f )", target.x, target.y )
+		# reach_this( target )
+		srv_user_target( target )
+	else:
+		rospy.logerr( " [user console] ERROR: not a valid position. " )
 
 
 
@@ -194,6 +211,12 @@ srv_wall_follower_switch = None
 
 ## call-point of the service 'reach_random_pos_switch'
 srv_reach_random_pos_switch = None
+
+# entry point of the service 'user_target'
+srv_user_target = None
+
+## call-point of the service 'position_defined'
+srv_position_defined = None
 
 
 
@@ -296,6 +319,18 @@ if __name__ == "__main__":
 	rospy.wait_for_service( name_reach_random_pos_switch )
 	srv_reach_random_pos_switch = rospy.ServiceProxy( name_reach_random_pos_switch, switch_service )
 	rospy.loginfo( " [%s] service %s ... OK", node_name, name_reach_random_pos_switch )
+	
+	# require the server 'user_target'
+	rospy.loginfo( " [%s] getting service %s ...", node_name, name_user_target )
+	rospy.wait_for_service( name_user_target )
+	srv_user_target = rospy.ServiceProxy( name_user_target, user_target )
+	rospy.loginfo( " [%s] service %s ... OK", node_name, name_user_target )
+	
+	# service 'position_defined'
+	rospy.loginfo( " [%s] getting service %s ...", node_name, name_position_defined )
+	rospy.wait_for_service( name_position_defined )
+	srv_position_defined = rospy.ServiceProxy( name_position_defined, position_defined )
+	rospy.loginfo( " [%s] service %s ... OK", node_name, name_position_defined )
 	
 	try:
 		rospy.loginfo( " [%s] is ONLINE", node_name )

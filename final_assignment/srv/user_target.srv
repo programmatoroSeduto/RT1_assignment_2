@@ -1,0 +1,10 @@
+# service file name 'user_target'
+
+
+# target
+geometry_msgs/Point target
+
+---
+
+# success?
+bool success

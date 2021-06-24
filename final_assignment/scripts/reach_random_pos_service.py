@@ -112,7 +112,7 @@ def clear_status( ):
 
 
 
-def get_new_target_from_move_base( ):
+def new_target_to_move_base( ):
 	'''
 		ask a new randomly-choosen target to the server points_manager
 		then send to MoveBase the target to reach 
@@ -252,7 +252,7 @@ def main():
 				service_active = False
 			else:
 				# need for a new target
-				get_new_target_from_move_base()
+				new_target_to_move_base()
 				
 				# the robot starts to move
 				is_moving = True
