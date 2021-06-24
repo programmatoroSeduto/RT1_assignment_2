@@ -1,5 +1,4 @@
-
-#! usr/bin/env python 
+#! /usr/bin/env python 
 
 import rospy
 from final_assignment.srv import switch_service, switch_serviceRequest, switch_serviceResponse
@@ -194,20 +193,6 @@ def srv_reach_random_pos_switch( data ):
 
 # --------------------------------- WORKING CYCLE
 
-## ...
-
-
-
-# --------------------------------- NODE
-
-def cbk_on_shutdown():
-	'''
-	This is called on the shutdown of the node. 
-	'''
-	rospy.loginfo( " [%s] closing...", node_name )
-
-
-
 def main():
 	'''
 	some word about the main function.
@@ -255,9 +240,20 @@ def main():
 
 
 
+# --------------------------------- NODE
+
+def cbk_on_shutdown():
+	'''
+	This is called on the shutdown of the node. 
+	'''
+	rospy.loginfo( " [%s] closing...", node_name )
+
+
+
+
 if __name__ == "__main__":
 	rospy.init_node( node_name )
-	rospy.on_shutdown( cbk_on_shutwown )
+	rospy.on_shutdown( cbk_on_shutdown )
 	
 	# require the server 'check_position'
 	rospy.loginfo( " [%] advertising service %s ...", node_name, name_reach_random_pos_status )
