@@ -22,3 +22,6 @@ bool active
 
 # timeout from the last goal reached
 time timeout
+
+# target position reached
+bool reached

@@ -5,7 +5,7 @@
 bool val
 
 # helpful for bug0
-bool only_one
+bool only_once
 
 ---
 
