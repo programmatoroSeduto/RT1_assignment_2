@@ -66,6 +66,7 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 add_service_files(
   FILES
+  bug0_status.srv
   check_position.srv
   get_point.srv
   position_defined.srv

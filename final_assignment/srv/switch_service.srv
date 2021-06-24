@@ -4,6 +4,9 @@
 # on or off?
 bool val
 
+# helpful for bug0
+bool only_one
+
 ---
 
 # the request was successful

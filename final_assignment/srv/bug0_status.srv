@@ -1,0 +1,24 @@
+# service file name 'bug0_status.srv'
+
+
+# Empty request
+
+---
+
+# target
+geometry_msgs/Point target_position
+
+# actual position
+geometry_msgs/Point actual_position
+
+# actual yaw
+float32 actual_yaw
+
+# actual status
+int32 status
+
+# active or not
+bool active
+
+# timeout from the last goal reached
+time timeout
