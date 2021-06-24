@@ -1,0 +1,14 @@
+# service file name 'switch_service.srv'
+
+
+# on or off?
+bool val
+
+---
+
+# the request was successful
+bool success
+
+# this kind of server can return immediately
+#    thit is the reason why there is a variable for checkig the status of the request
+bool in_progress

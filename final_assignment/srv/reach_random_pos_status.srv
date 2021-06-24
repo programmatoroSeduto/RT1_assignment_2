@@ -1,0 +1,21 @@
+# service 'reach_random_pos_status'
+
+
+# Empty request
+
+---
+
+# is the node active?
+bool is_active
+
+# the actual target
+geometry_msgs/Point target
+
+# the distance from the point to reach
+float64 distance
+
+# the actual position (point)
+geometry_msgs/Point actual_position
+
+# is it the last position? (true/false)
+bool last_pos_signal

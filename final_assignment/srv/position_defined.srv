@@ -1,0 +1,6 @@
+# service: position_defined
+# msg: position_defined.srv
+
+geometry_msgs/Point position
+---
+bool defined

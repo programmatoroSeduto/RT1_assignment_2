@@ -1,0 +1,25 @@
+# server file name 'check_position'
+
+
+# check only (ALWAYS SET THIS FIELD!)
+bool check_only
+
+# the tolerance, which must be >=0
+float32 tol
+
+# the point you want to reach (only with check_only = FALSE)
+geometry_msgs/Point target
+
+---
+
+# the actual position of the robot (point)
+geometry_msgs/Point actual_position
+
+# is the target reached given the tolerance?
+bool reached
+
+# valid operation?
+bool success
+
+# real distance from the target
+float64 distance

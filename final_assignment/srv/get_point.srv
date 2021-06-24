@@ -1,0 +1,6 @@
+# service: get point
+# msg: get_point.srv
+
+#...empty...
+---
+geometry_msgs/Point position

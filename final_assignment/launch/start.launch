@@ -1,0 +1,7 @@
+<launch>
+	<!-- Launch the simulation environment -->
+	<include file="$(find final_assignment)/launch/simulation_gmapping.launch" />
+	
+	<!-- launch move_base -->
+	<include file="$(find final_assignment)/launch/move_base.launch" />
+</launch>
