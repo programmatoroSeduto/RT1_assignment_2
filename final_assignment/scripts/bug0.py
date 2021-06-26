@@ -1,13 +1,47 @@
 #! /usr/bin/env python
 
+##
+#	@file bug0.py
+#	@author Prof. <b>Carmine Recchiuto</b> (first version), <i>Francesco Ganci</i> (S4143910) (Service version)
+#	@brief A finite sate machine for driving a mobile robot towards a target. 
+#	@version 2.0
+#	@date 2021-06-25
+#	
+#	\details
+#   The node implements a simple planning algorithm, an alternative to <i>move_base</i>. It works under the assumptions that a robot has a good odometry (see SLAM_gmapping) and has laser sensors. <br>
+#   Formally speaking, the node is a finite state machine, reacting to the sensor and to the distance from a given target:
+#   <ul>
+#   <li><b> State 0</b> : the robot goes straight until it finds a wall </li>
+#   <li><b> State 1</b> : the robot follows the wall, see wall_follow_service_m.py </li>
+#   <li><b> State 2</b> : the robot has "reached" the target (i.e. the robot is close enough to the target position) </li>
+#   </ul>
+#   The node can be turned on and off, exposing a service interface quite similar (architecturally speaking) to the node reach_random_pos_service.py .<br>
+#   Two behaviours are implemented here:
+#   <ul>
+#   <li> ask for a random target, then try and reach it </li>
+#   <li> given a target via parameter server, try and reach the target. </li>
+#   </ul>
+#   When turned off, the service immediately blocks the robot in the actual position. <br>
+#   Note that this node doesn't directly publish the velocity to the simulated environment, rather it uses the nodes wall_follow_service_m.py and go_to_point_service_m.py for the low-level control. <br>
+#	
+#   @see wall_follow_service_m.py the wall follower component
+#   @see go_to_point_service_m.py the go to point component
+#   
+#   <b>Related services:</b>
+#   <ul>
+#   <li>\ref DOCSRV_bug0_switch "bug0 switch service"</li>
+#   <li>\ref DOCSRV_bug0_status "bug0 status service"</li>
+#   </ul>
+#   
+#	@copyright Copyright (c) 2021
+#
+
 import rospy
 import time
-# import ros message
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
 from tf import transformations
-# import ros service
 from std_srvs.srv import *
 from geometry_msgs.msg import Twist
 from final_assignment.srv import switch_service, switch_serviceRequest, switch_serviceResponse
@@ -16,6 +50,9 @@ from final_assignment.srv import get_point, get_pointRequest, get_pointResponse
 
 import math
 
+# --------------------------------- DATA
+
+## name of this node
 node_name = "bug0"
 
 ## name of the service 'bug0_switch'
@@ -30,35 +67,53 @@ name_get_point = "/get_point"
 ## call-point of the service 'get_point'
 srv_get_point = None
 
+## Is the service active? 
 service_active = False
+
+## Only_once mode (see \ref DOCSRV_bug0_switch "bug0_switch" service)
 only_once = False
-# TODO un timeout
 
+## handler for the topic 'cmd_vel' (Publisher)
 pub = None
-srv_client_go_to_point_ = None
-srv_client_wall_follower_ = None
 
+## Actual orientation wrt 'z' axis
 yaw_ = 0
 
+## actual position
 position_ = Point()
+
+## target position
 desired_position_ = Point()
 
+## Laser regions
 regions_ = None
 
+## Status labels
 state_desc_ = ['Go to point', 'wall following', 'target reached']
-state_ = 0
-# 0 - go to point
-# 1 - wall following
 
-## err_pos AKA distance
+## Actual status
+#
+#   \details
+# 0 - go to point<br>
+# 1 - wall following<br>
+# 2 - goal reached 
+# 
+state_ = 0
+
+## distance from the target
 err_pos = -1
 
 
+# --------------------------------- FUNCTIONS
 
+## 
+#	@brief Get a new randomly-chosen target
+#	
+#	\details
+#		The only purpose of this function is requiring a new target from the \ref DOCSRV_get_point "/get_point" server, and storing it into the parameter server.
+#	    See \ref DOCSRV_get_point "/get_point" .
+#
 def new_random_target( ):
-	'''
-		get a new random target from the service '/get_point'
-	'''
 	global name_get_point, srv_get_point
 	global desired_position_
 	
@@ -71,7 +126,93 @@ def new_random_target( ):
 
 
 
+## 
+#	@brief Change the state of the node. 
+#	
+#	@param state (Int) the next state. 
+#	
+#	\details
+#   The function changes the state of the robot from the actual one to the one passed as argument. 
+#   <ul>
+#   <li> <b>To state 0</b> : only go_to_point, wall_follow is turned off </li>
+#   <li> <b>To state 1</b> : only wall_follow, go_to_point is off </li>
+#   <li> <b>To state 2</b> : the robot is stopped, and a new target is required if the node is not in 'only_once' mode.  </li>
+#   </ul>
+#
+def change_state( state ):
+	global state_, state_desc_, only_once, service_active
+	global srv_client_wall_follower_, srv_client_go_to_point_
+	state_ = state
+	log = "state changed: %s" % state_desc_[state]
+	rospy.loginfo(log)
+	if state_ == 0:
+		resp = srv_client_go_to_point_(True)
+		resp = srv_client_wall_follower_(False)
+	if state_ == 1:
+		resp = srv_client_go_to_point_(False)
+		resp = srv_client_wall_follower_(True)
+	if state_ == 2:
+		resp = srv_client_go_to_point_(False)
+		resp = srv_client_wall_follower_(False)
+		twist_msg = Twist()
+		twist_msg.linear.x = 0
+		twist_msg.angular.z = 0
+		pub.publish(twist_msg)
+		
+		if not only_once:
+			new_random_target( )
+		else:
+			service_active = False
+			only_once = False
 
+
+
+## 
+#	@brief Normalize an angle in [-pi, pi]
+#	
+#	@param angle (float) the angle, in radiants
+#	@return float the normalised angle
+#
+def normalize_angle(angle):
+	if(math.fabs(angle) > math.pi):
+		angle = angle - (2 * math.pi * angle) / (math.fabs(angle))
+	return angle
+
+
+
+# --------------------------------- SERVICES
+
+## call-point of the service 'go_to_point_switch'
+srv_client_go_to_point_ = None
+
+## call-point of the service 'wall_follow_switch'
+srv_client_wall_follower_ = None
+
+
+
+## 
+#	@brief Turn on or off the node.
+#	
+#	@param data (final_assignment/switch_serviceRequest) The request
+#	
+#	\details
+#   Here is how this switch works:
+#   <ul>
+#   <li> 
+#   If the request is to <i>activate the service</i>:
+#   <ul>
+#   <li> not success if the service is already active </li>
+#   <li> otherwise, activate the service and return success to the caller. </li>
+#   </ul>
+#   </li>
+#   <li> 
+#   If the request is to <i>stop the service</i>:
+#   <ul>
+#   <li> if the service is already turned off, return not succes.  </li>
+#   <li> Otherwise, the robot is immediately stopped, and the server is goes off. Return success</li>
+#   </ul>
+#   </li>
+#   </ul>
 def srv_bug0_switch( data ):
 	global service_active, only_once
 	
@@ -110,10 +251,16 @@ def srv_bug0_switch( data ):
 
 
 
+## 
+#	@brief Get the status of the service
+#	
+#	@param empty (final_assignment/bug0_status) empty request
+#	
+#	\details
+#       The function simply sends a message containing the most significant informations from the data section.  <br>
+#       See \ref DOCSRV_bug0_status "/bug0_status" . 
+#
 def srv_bug0_status( empty ):
-	'''
-	retrieve and return the status of the node
-	'''
 	global desired_position_, position_, yaw_, state_, err_pos
 	
 	to_return = bug0_statusResponse( )
@@ -127,8 +274,17 @@ def srv_bug0_status( empty ):
 
 
 
+# --------------------------------- TOPICS
 
-def clbk_odom(msg):
+## 
+#	@brief Get the actual posture.
+#	
+#	@param msg (nsv_msgs/Odometry) the actual posture from the simulation.
+#	
+#	\details
+#		The function reads and adapts the informations from the topic '/odom'.
+#
+def clbk_odom( msg ):
 	global position_, yaw_
 
 	# position
@@ -144,6 +300,16 @@ def clbk_odom(msg):
 	yaw_ = euler[2]
 
 
+
+## 
+#	@brief Get the laser measurements.
+#	
+#	@param msg (sensor_msgs/LaserScan) raw-update from the lasers.
+#	
+#	\details
+#		The function reads and adapts the informations from the topic '/scan'. <br>
+#       Used in managing states '1' and '2'
+#
 def clbk_laser(msg):
 	global regions_
 	regions_ = {\
@@ -155,56 +321,27 @@ def clbk_laser(msg):
 	}
 
 
-def change_state(state):
-	global state_, state_desc_, only_once, service_active
-	global srv_client_wall_follower_, srv_client_go_to_point_
-	state_ = state
-	log = "state changed: %s" % state_desc_[state]
-	rospy.loginfo(log)
-	if state_ == 0:
-		resp = srv_client_go_to_point_(True)
-		resp = srv_client_wall_follower_(False)
-	if state_ == 1:
-		resp = srv_client_go_to_point_(False)
-		resp = srv_client_wall_follower_(True)
-	if state_ == 2:
-		resp = srv_client_go_to_point_(False)
-		resp = srv_client_wall_follower_(False)
-		twist_msg = Twist()
-		twist_msg.linear.x = 0
-		twist_msg.angular.z = 0
-		pub.publish(twist_msg)
-		
-		if not only_once:
-			new_random_target( )
-		else:
-			service_active = False
-			only_once = False
 
+# --------------------------------- WORKING CYCLE
 
-def normalize_angle(angle):
-	if(math.fabs(angle) > math.pi):
-		angle = angle - (2 * math.pi * angle) / (math.fabs(angle))
-	return angle
-
-
+## 
+#	@brief The main section of the Bug0 algorithm
+#	
+#	\details
+#	The state machine works in this way:
+#   <ul>
+#   <li> <b>State 0</b> : <i>go straight</i>. If the robot has reached the target, go to state 2. If there is a wall opposite to the robot, go to state 1.  </li>
+#   <li> <b>State 1</b> : <i>follow the wall</i>. If there is a way point, go to state 0. If the target is reached, go to state 2. </li>
+#   <li> <b>State 2</b> : <i>read the new target from the parameter server</i>. If the robot is already in the goal position, go to state 2. Otherwise, go to state 0.  </li>
+#   </ul>
+#
 def main():
 	time.sleep(2)
 	global regions_, position_, desired_position_, state_, yaw_, yaw_error_allowed_
 	global srv_client_go_to_point_, srv_client_wall_follower_, srv_client_user_interface_, pub
 	global service_active, err_pos, only_once, state_
 	
-	rospy.init_node( node_name )
-	
-	sub_laser = rospy.Subscriber('/scan', LaserScan, clbk_laser)
-	sub_odom = rospy.Subscriber('/odom', Odometry, clbk_odom)
-	pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
-	
-	srv_client_go_to_point_ = rospy.ServiceProxy( '/go_to_point_switch', SetBool)
-	srv_client_wall_follower_ = rospy.ServiceProxy( '/wall_follower_switch', SetBool)
-	
-	# initialize going to the point
-	#change_state(0)
+	# initialize: get a new target
 	state_ = 2
 	
 	rate = rospy.Rate(20)
@@ -223,8 +360,7 @@ def main():
 			elif regions_['front'] < 0.5:
 				change_state(1)
 			
-			# TODO incremento del timeout e possibile terminazione
-
+		
 		elif state_ == 1:
 			desired_yaw = math.atan2(desired_position_.y - position_.y, desired_position_.x - position_.x)
 			err_yaw = normalize_angle(desired_yaw - yaw_)
@@ -236,10 +372,8 @@ def main():
 			if regions_['front'] > 1 and math.fabs(err_yaw) < 0.05:
 				change_state(0)
 			
-			# TODO incremento del timeout e possibile terminazione se viene sforato
 			
 		elif state_ == 2:
-			# TODO reset del timeout a zero
 			
 			desired_position_.x = rospy.get_param('des_pos_x')
 			desired_position_.y = rospy.get_param('des_pos_y')
@@ -252,7 +386,21 @@ def main():
 		rate.sleep()
 
 
+
+# --------------------------------- NODE
+
+## Called on the shutdown of the node. 
+def cbk_on_shutdown():
+	global node_name
+	
+	rospy.loginfo( " [%s] is OFFLINE", node_name )
+
+
+
+
 if __name__ == "__main__":
+	
+	rospy.init_node( node_name )
 	
 	# service 'bug0_switch'
 	rospy.loginfo( " [%s] advertising service %s ...", node_name, name_bug0_switch )
@@ -269,5 +417,12 @@ if __name__ == "__main__":
 	rospy.wait_for_service( name_get_point )
 	srv_get_point = rospy.ServiceProxy( name_get_point, get_point )
 	rospy.loginfo( " [%s] service %s ... OK", node_name, name_get_point )
+	
+	sub_laser = rospy.Subscriber('/scan', LaserScan, clbk_laser)
+	sub_odom = rospy.Subscriber('/odom', Odometry, clbk_odom)
+	pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
+	
+	srv_client_go_to_point_ = rospy.ServiceProxy( '/go_to_point_switch', SetBool)
+	srv_client_wall_follower_ = rospy.ServiceProxy( '/wall_follower_switch', SetBool)
 	
 	main()

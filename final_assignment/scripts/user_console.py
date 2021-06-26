@@ -1,6 +1,21 @@
 #! /usr/bin/env python 
 
-
+##
+#	@file user_console.py
+#	@author Francesco Ganci (S4143910)
+#	@brief A user interface for taking commands to a mobile robot.
+#	@version 1.0
+#	@date 2021-06-25
+#	
+#	\details
+#   Here a little command line interface is implemented in order to drive a mobile robot. It can interact with two planning algorithms: bug0 and <b><a href="">move_base</a></b>. <br>
+#	see \ref howto-commands "this walkthrough" for understanding what this console can do, and how. 
+#	
+#	
+#	
+#	
+#	@copyright Copyright (c) 2021
+#
 
 import rospy
 from std_srvs.srv import SetBool

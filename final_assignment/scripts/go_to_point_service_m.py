@@ -1,5 +1,14 @@
 #! /usr/bin/env python
 
+##
+#	@file go_to_point_service_m.py
+#	@author Prof. <b>Carmine Recchiuto</b> (first version)
+#	@brief go-to-point behaviour, a component of the bug0 algorithm.
+#	@version 1.0
+#	
+#	@copyright Copyright (c) 2021
+#
+
 # import ros stuff
 import rospy
 from sensor_msgs.msg import LaserScan

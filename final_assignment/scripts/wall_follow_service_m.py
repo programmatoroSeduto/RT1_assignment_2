@@ -1,5 +1,14 @@
 #! /usr/bin/env python
 
+##
+#	@file wall_follow_service_m.py
+#	@author Prof. <b>Carmine Recchiuto</b> (first version)
+#	@brief wall_follower behaviour, a component of the bug0 algorithm.
+#	@version 1.0
+#	
+#	@copyright Copyright (c) 2021
+#
+
 import rospy
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
