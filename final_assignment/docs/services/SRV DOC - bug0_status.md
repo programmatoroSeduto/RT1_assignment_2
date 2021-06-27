@@ -48,9 +48,6 @@ int32 status
 # active or not
 bool active
 
-# timeout from the last goal reached
-time timeout
-
 # distance from the target
 float32 distance
 

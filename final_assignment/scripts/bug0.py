@@ -2,7 +2,7 @@
 
 ##
 #	@file bug0.py
-#	@author Prof. <b>Carmine Recchiuto</b> (first version), <i>Francesco Ganci</i> (S4143910) (Service version)
+#	@authors Prof. <b>Carmine Recchiuto</b> (first version), <i>Francesco Ganci</i> (S4143910) (Service version)
 #	@brief A finite sate machine for driving a mobile robot towards a target. 
 #	@version 2.0
 #	@date 2021-06-25
@@ -26,6 +26,7 @@
 #	
 #   @see wall_follow_service_m.py the wall follower component
 #   @see go_to_point_service_m.py the go to point component
+#   @see reach_random_pos_service.py an alternative service using move_base
 #   
 #   <b>Related services:</b>
 #   <ul>
@@ -102,6 +103,9 @@ state_ = 0
 
 ## distance from the target
 err_pos = -1
+
+## Tolerance on the distance from the target
+max_tolerance_target = 0.5
 
 
 # --------------------------------- FUNCTIONS
@@ -261,14 +265,16 @@ def srv_bug0_switch( data ):
 #       See \ref DOCSRV_bug0_status "/bug0_status" . 
 #
 def srv_bug0_status( empty ):
-	global desired_position_, position_, yaw_, state_, err_pos
+	global desired_position_, position_, yaw_, state_, err_pos, service_active, max_tolerance_target, err_pos
 	
 	to_return = bug0_statusResponse( )
 	to_return.target_position = desired_position_
 	to_return.actual_position = position_
-	to_return.yaw = yaw_
+	to_return.actual_yaw = yaw_
 	to_return.status = state_
+	to_return.active = service_active
 	to_return.distance = err_pos
+	to_return.reached = ( err_tolerance < max_tolerance_target )
 	
 	return to_return
 
@@ -339,7 +345,7 @@ def main():
 	time.sleep(2)
 	global regions_, position_, desired_position_, state_, yaw_, yaw_error_allowed_
 	global srv_client_go_to_point_, srv_client_wall_follower_, srv_client_user_interface_, pub
-	global service_active, err_pos, only_once, state_
+	global service_active, err_pos, only_once, state_, max_tolerance_target
 	
 	# initialize: get a new target
 	state_ = 2
@@ -354,7 +360,7 @@ def main():
 		
 		if state_ == 0:
 			err_pos = math.sqrt(pow(desired_position_.y - position_.y, 2) + pow(desired_position_.x - position_.x, 2))
-			if(err_pos < 0.3):
+			if(err_pos < max_tolerance_target):
 				change_state(2)
 				
 			elif regions_['front'] < 0.5:
@@ -366,7 +372,7 @@ def main():
 			err_yaw = normalize_angle(desired_yaw - yaw_)
 			err_pos = math.sqrt(pow(desired_position_.y - position_.y, 2) + pow(desired_position_.x - position_.x, 2))
 			
-			if(err_pos < 0.3):
+			if(err_pos < max_tolerance_target):
 				change_state(2)
 				
 			if regions_['front'] > 1 and math.fabs(err_yaw) < 0.05:
@@ -380,7 +386,7 @@ def main():
 			
 			err_pos = math.sqrt(pow(desired_position_.y - position_.y, 2) + pow(desired_position_.x - position_.x, 2))
 			
-			if(err_pos > 0.35):
+			if(err_pos > max_tolerance_target + 0.05):
 				change_state(0)
 		
 		rate.sleep()

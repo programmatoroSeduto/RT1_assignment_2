@@ -90,7 +90,7 @@ Non-blocking service.
 ```python
 req = check_positionRequest( )
 req.check_only = False
-# req.tol = int(tol)
+# req.tol = float(tol) # positive float
 # req.target = Point(x, y, z)
 
 res = srv_check_position( req )

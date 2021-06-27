@@ -1,5 +1,26 @@
 #! /usr/bin/env python
 
+##
+#	@file reach_user_pos_service.py
+#	@author Francesco Ganci (S4143910)
+#	@brief Reach a user-defined position using move_base motion planning algorithm
+#	@version 1.0
+#	@date 2021-06-25
+#	
+#	\details
+#		This ROS node implements a simple component in charge of sending to move_base a goal given by the user. It is the implementation of the functionality no.2 when move_base is set. 
+#	
+#	<br>
+#	
+#   <b>See also:</b>
+#       <ul>
+#       <li> \ref user_console.py "User Console Component" </li>
+#       <li> \ref DOCSRV_user_target "/user_target service" </li>
+#       </ul>
+#	
+#	@copyright Copyright (c) 2021
+#
+
 import rospy
 from final_assignment.srv import user_target, user_targetRequest, user_targetResponse
 from move_base_msgs.msg import MoveBaseActionGoal
@@ -35,13 +56,16 @@ cycle_time = rospy.Duration( 0, 500 )
 
 # --------------------------------- FUNCTIONS
 
+##
+#   \brief send the goal to MoveBase.
+#   
+#    \param target_position (geometry_msgs/Point)
+#   
+#    \details
+#    ask a new randomly-choosen target to the server points_manager<br>
+#    then send to MoveBase the target to reach 
+#    
 def new_target_to_move_base( target_position ):
-	'''
-		ask a new randomly-choosen target to the server points_manager
-		then send to MoveBase the target to reach 
-		
-		\param target_position (geometry_msgs/Point)
-	'''
 	global node_name
 	global name_move_base, srv_move_base
 	
@@ -62,15 +86,17 @@ def new_target_to_move_base( target_position ):
 srv_check_position = None
 
 
-
+##  \brief implementation of the service '/user_target'
+#   
+#   \param data (final_assignment/user_targetRequest) the goal from the user
+#   
+#   \details
+#       get from the user a target, then reach it.  <br>
+#       <b>BLOCKING SERVER</b> : the server doesn't return until some error occurrs, or the target has been reached. 
+#   
+#   <b>See also</b> : \ref DOCSRV_user_target "/user_target service" How to use it.
+#   
 def srv_user_target( data ):
-	'''
-	get from the user a target,
-	then reach it. 
-	BLOCKING SERVER: the server doesn't return until:
-		some error occurrs
-		the target is reached
-	'''
 	global node_name, min_distance_from_the_target
 	global name_check_position, srv_check_position
 	
@@ -97,28 +123,18 @@ def srv_user_target( data ):
 
 
 
-# --------------------------------- TOPICS
-
-## ...
-
-
-
 # --------------------------------- WORKING CYCLE
 
+## a simple spin. 
 def main():
-	'''
-	simply a spin
-	'''
 	rospy.spin()
 
 
 
 # --------------------------------- NODE
 
+## This is called on the shutdown of the node. 
 def cbk_on_shutdown():
-	'''
-	This is called on the shutdown of the node. 
-	'''
 	global node_name
 	
 	rospy.loginfo( " [%s] is OFFLINE", node_name )
@@ -149,6 +165,4 @@ if __name__ == "__main__":
 		rospy.loginfo( " [%s] is ONLINE", node_name )
 		main()
 	except rospy.ROSException:
-		# ... properly manage the exception
-		# https://docs.python.org/3/tutorial/errors.html
 		rospy.loginfo( " [%s] Raised an Exception ... ", node_name )

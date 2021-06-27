@@ -11,7 +11,6 @@
 **Used by:**
 
 - `reach_random_pos_service.py`
-- `reach_user_pos_service.py`
 - `bug0.py`
 
 ## Semantic

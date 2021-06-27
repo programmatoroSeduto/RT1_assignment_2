@@ -3,16 +3,13 @@
 ##
 #	@file user_console.py
 #	@author Francesco Ganci (S4143910)
-#	@brief A user interface for taking commands to a mobile robot.
+#	@brief A user interface for sending commands to a mobile robot.
 #	@version 1.0
 #	@date 2021-06-25
 #	
 #	\details
 #   Here a little command line interface is implemented in order to drive a mobile robot. It can interact with two planning algorithms: bug0 and <b><a href="">move_base</a></b>. <br>
 #	see \ref howto-commands "this walkthrough" for understanding what this console can do, and how. 
-#	
-#	
-#	
 #	
 #	@copyright Copyright (c) 2021
 #
@@ -24,6 +21,7 @@ from final_assignment.srv import user_target, user_targetRequest, user_targetRes
 from final_assignment.srv import position_defined, position_definedRequest, position_definedResponse
 from final_assignment.srv import bug0_status, bug0_statusRequest, bug0_statusResponse
 from geometry_msgs.msg import Point
+
 
 
 # --------------------------------- DATA
@@ -86,14 +84,20 @@ use_bug0 = False
 
 
 
-
-
 # --------------------------------- FUNCTIONS
 
+## 
+#	@brief Implementation of the command <b>reach_random_pos</b> [no.1]
+#	
+#	\details
+#	    This function selects the node to activate between move_base and bug0.
+#		Then, it sends the proper switch message to the selected motion planning algorithm.
+#   
+#   <br>
+#   
+#   <b>See also:</b> \ref howto-commands "Command Line Interfaces - Commands"
+#   
 def reach_random_pos( ):
-	''' activate the node 'reach_random_pos_service.py'.
-	
-	'''
 	global node_name, use_bug0
 	global reach_random_pos_active, robot_busy
 	global name_reach_random_pos_switch, srv_reach_random_pos_switch
@@ -123,10 +127,14 @@ def reach_random_pos( ):
 
 
 
+## 
+#	@brief Stop the background process `reach_random_pos`
+#	
+#	\details
+#		If <i>move_base</i> is active, the function waits until the target is reached and then turns off the node <i>reach_random_pos_service.py</i>.
+#		Otherwise, it immediately stops bug0. 
+#
 def stop_reach_random_pos( ):
-	'''
-		stop the activity 'reach_random_pos'
-	'''
 	global use_bug0
 	global robot_busy, reach_random_pos_active
 	global name_bug0_switch, srv_bug0_switch
@@ -158,10 +166,19 @@ def stop_reach_random_pos( ):
 
 
 
+## 
+#	@brief Implementation of the command <b>reach_user_pos</b> [no.2]
+#	
+#	\details
+#	    This function asks for a target to the user, then checks it. <br>
+#		If the position is contained in the set of predefined ones, the command is valid, and a message is issued to the selected motion planning algorithm. <br>
+#       After sent the message, the function waits until the target is reached. 
+#   
+#   <br>
+#   
+#   <b>See also:</b> \ref howto-commands "Command Line Interfaces - Commands"
+#   
 def reach_user_pos():
-	''' ask to the user a position to reach, then reach it
-		
-	'''
 	global node_name
 	global name_position_defined, srv_position_defined
 	global name_user_target, srv_user_target
@@ -200,10 +217,20 @@ def reach_user_pos():
 
 
 
+## 
+#	@brief Send manually a goal to bug0
+#	
+#	\param target (geometry_msgs/Point) the target to reach.
+#	
+#	\details
+#		The service bug0 needs a further step: the desired target must be passed via parameter server. <br>
+#       So, the function writes on the parameter server, then waits until the goal is reached. 
+#   
+#   <br>
+#   
+#   <b>See also:</b> \ref DOCSRV_bug0_status "service bug0 status", in particular how to use it. 
+#
 def reach_user_pos_bug0( target ):
-	''' reach a given target using bug0 algorithm
-		\param target (geometry_msgs/Point)
-	'''
 	global node_name
 	global name_user_target, srv_user_target
 	global name_bug0_switch, srv_bug0_switch
@@ -214,7 +241,7 @@ def reach_user_pos_bug0( target ):
 	rospy.set_param("des_pos_y", target.y)
 	
 	# activate bug0 in once_only mode
-	res = srv_bug0_switch( True, only_once=True )
+	res = srv_bug0_switch( True, True )
 	
 	# wait until the robot has reached the goal
 	goal_reached = ( srv_bug0_status( ) ).reached
@@ -224,10 +251,20 @@ def reach_user_pos_bug0( target ):
 
 
 
+## 
+#	@brief Implementation of the command <b>wall_follow</b> [no.3]
+#	
+#	\param val (bool; default: True) the state of the wall_follow service
+#	
+#	\details
+#	    The function simply activates the wall follow service sending to it a switch message. <br>
+#       The same function can turn off the service, passing <i>False</i> as argument. 
+#   
+#   <br>
+#   
+#   <b>See also:</b> \ref howto-commands "Command Line Interfaces - Commands"
+#   
 def wall_follow( val=True ):
-	'''activate/deactivate the wall follower.
-		\param val (bool; default: True) the state of the wall follow service
-	'''
 	global node_name
 	global name_wall_follower_switch, srv_wall_follower_switch
 	global robot_busy, wall_follow_active
@@ -250,10 +287,17 @@ def wall_follow( val=True ):
 
 
 
+## 
+#	@brief Implementation of the command <b>last_pos</b> [no.4]
+#	
+#	\details
+#	    Interrupts any ongoing background task whih makes the robot busy. 
+#   
+#   <br>
+#   
+#   <b>See also:</b> \ref howto-commands "Command Line Interfaces - Commands"
+#   
 def last_pos():
-	'''stop the ongoing movement, if any
-		
-	'''
 	global node_name
 	global robot_busy
 	global reach_random_pos_active, wall_follow_active
@@ -271,10 +315,17 @@ def last_pos():
 
 
 
+## 
+#	@brief Implementation of the command <b>change_motion_planning_algorithm</b> [no.5]
+#	
+#	\details
+#	    select a motion planning algorithm between bug0 and move_base. 
+#   
+#   <br>
+#   
+#   <b>See also:</b> \ref howto-commands "Command Line Interfaces - Commands"
+#  
 def change_motion_planning_algorithm():
-	'''select a motion planning algorithm.
-
-	'''
 	global node_name, use_bug0, robot_busy
 	
 	# you can't change the motion planning algorithm while you're using it!
@@ -299,10 +350,17 @@ def change_motion_planning_algorithm():
 
 
 
+## 
+#	@brief Implementation of the command <b>help</b> [no.6]
+#	
+#	\details
+#	    The function prints an help on the screen. 
+#   
+#   <br>
+#   
+#   <b>See also:</b> \ref howto-commands "Command Line Interfaces - Commands"
+#  
 def print_help():
-	'''print a help on the screen.
-
-	'''
 	global node_name
 	global commands, commands_info
 	
@@ -316,13 +374,13 @@ def print_help():
 
 # --------------------------------- SERVICES
 
-# call point of the server 'wall_follower_switch'
+## call point of the server 'wall_follower_switch'
 srv_wall_follower_switch = None
 
 ## call-point of the service 'reach_random_pos_switch'
 srv_reach_random_pos_switch = None
 
-# entry point of the service 'user_target'
+## entry point of the service 'user_target'
 srv_user_target = None
 
 ## call-point of the service 'position_defined'
@@ -336,22 +394,20 @@ srv_bug0_status = None
 
 
 
-# ... callbacks ...
-
-
-
-# --------------------------------- TOPICS
-
-## ...
-
-
-
 # --------------------------------- WORKING CYCLE
 
+## 
+#	@brief Ask the next command to the user. 
+#	
+#	\details
+#		This function implements a simple while-switch pattern for receiving command from the command line. <br>
+#       Commands are all case-insensitive. Also corresponding numbers are allowed (lazy mode). 
+#   
+#   <br>
+#   
+#   <b>See also:</b> \ref howto-commands "Command Line Interfaces - Commands"
+#  
 def main():
-	'''Ask the next command to the user
-
-	'''
 	global node_name
 	global commands, last_command_idx
 	
@@ -411,10 +467,10 @@ def main():
 
 # --------------------------------- NODE
 
+## 
+#	@brief Called when the shutdown signal is raised. 
+#	
 def cbk_on_shutdown():
-	'''
-	This is called on the shutdown of the node. 
-	'''
 	global node_name
 	rospy.loginfo( " [%s] is OFFLINE", node_name )
 
@@ -464,6 +520,4 @@ if __name__ == "__main__":
 		rospy.loginfo( " [%s] is ONLINE", node_name )
 		main()
 	except rospy.ROSException:
-		# ... properly manage the exception
-		# https://docs.python.org/3/tutorial/errors.html
 		rospy.logwarn( " [%s] Raised an Exception ... ", node_name )

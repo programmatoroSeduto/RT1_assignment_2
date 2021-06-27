@@ -1,5 +1,37 @@
 #! /usr/bin/env python 
 
+##
+#	@file reach_random_pos_service.py
+#	@author Francesco Ganci (S4143910)
+#	@brief Background process: ask for a target, then reach it using <i>move_base</i>
+#	@version 1.0
+#	@date 2021-06-25
+#	
+#	\details
+#		This ROS node implements the move_base version of the functionality [no.1] <b>reach_random_pos_service</b>, executed in background. <br>
+#       The interface is made up of 2 services: 
+#       <ul>
+#       <li> \ref DOCSRV_reach_random_pos_switch "/reach_random_pos_switch" : turn on and off the service. </li>
+#       <li> \ref DOCSRV_reach_random_pos_status "/reach_random_pos_status" : inspect the progress of the motion towards the goal, and other informations. </li>
+#       </ul>
+#       When the node is active, it ciclically asks for a target to \ref DOCSRV_get_point "/get_point" service, then sends to <i>move_base</i> the goal and reached is. <i>move_base</i> is not interruptable in this implementation, so when the <i>stop</i> command is raised, the command is marked as <i>in progress</i> until the robot has reached the last set target. <br>
+#       This node is implemented as a parallel process: services are always non-blocking, so the caller process can do other things while the robot is moving. <br>
+#	
+#	<br>
+#	
+#   <b>See also:</b>
+#       <ul>
+#       <li> \ref user_console.py "User Console Component" </li>
+#       <li> \ref DOCSRV_reach_random_pos_switch "/reach_random_pos_switch service" </li>
+#       <li> \ref DOCSRV_reach_random_pos_status "/reach_random_pos_status service" </li>
+#       <li> \ref bug0.py "bug0", an alternative to move_base with a very similar interface. </li>
+#       </ul>
+#		
+#	@copyright Copyright (c) 2021
+#
+
+
+
 import rospy
 from final_assignment.srv import switch_service, switch_serviceRequest, switch_serviceResponse
 from final_assignment.srv import check_position, check_positionRequest, check_positionResponse
@@ -7,6 +39,8 @@ from final_assignment.srv import get_point, get_pointRequest, get_pointResponse
 from final_assignment.srv import reach_random_pos_status, reach_random_pos_statusRequest, reach_random_pos_statusResponse
 from move_base_msgs.msg import MoveBaseActionGoal
 from geometry_msgs.msg import Point
+
+
 
 # --------------------------------- DATA
 
@@ -69,12 +103,13 @@ cycle_time = rospy.Duration( 0, 500 )
 
 # --------------------------------- FUNCTIONS
 
+##
+#   \brief Update the informations about the position from check_position service.
+#   
+#   \details
+#       if the robot is_moving, make a common request to \ref DOCSRV_check_position "/check_position" service; else, do nothing.
+#
 def update_current_position( ):
-	'''
-	Update the informations about the position from check_position service.
-	if the robot is_moving, make a common request,
-	else, do nothing.
-	'''
 	global is_moving, min_distance_from_the_target, target_position, last_response_check_pos, actual_position
 	global srv_check_position
 	
@@ -96,12 +131,13 @@ def update_current_position( ):
 
 
 
+##  \brief clear the status of the node.
+#   
+#   \details
+#       This is called when the service is turned off. Simple setting of booleans to 'off' state. <br>
+#       (not is_moving), (not signal_last_pos), (not target_pos)
+#   
 def clear_status( ):
-	'''
-	not is_moving
-	not signal_last_pos
-	target_pos None
-	'''
 	global is_moving, signal_last_pos, target_position
 	
 	is_moving = False
@@ -112,11 +148,10 @@ def clear_status( ):
 
 
 
+##
+#   \brief ask a new randomly-choosen target to the server points_manager, then send to MoveBase the target to reach . 
+#   
 def new_target_to_move_base( ):
-	'''
-		ask a new randomly-choosen target to the server points_manager
-		then send to MoveBase the target to reach 
-	'''
 	global name_get_point, srv_get_point
 	global name_move_base, srv_move_base
 	global target_position
@@ -144,12 +179,21 @@ srv_check_position = None
 srv_get_point = None
 
 
-
+##
+#   \brief Turn on and off the service. 
+#   
+#   \param data (final_assignment/switch_service) the switch. 
+#   
+#   \details
+#       The switch has this behaviour:
+#       <ul>
+#       <li> Any 'turn-on' signal when the service is already active will cause the cancellation of any last_pos signal previously raised. </li> 
+#       <li> If the 'turn-on' signal is received and the service is off, the request always succeeds, and the service is turned on. </li>
+#       <li> Any 'turn-off' signal when the node is turned off results in a not-success response </li>
+#       <li> The 'turn-off' request isn't immediately executed, because in this implementation move_base is not interruptible. The request is marked as <i>in_progress</i>, and resolved when the robot arrives at its destination. </li>
+#       </ul>
+#   
 def srv_reach_random_pos_switch( data ):
-	''' Turn on and off the service. 
-		
-		\param data (final_assignment/switch_service)
-	'''
 	global service_active, signal_last_pos, is_moving
 	
 	response = switch_serviceResponse()
@@ -192,10 +236,8 @@ def srv_reach_random_pos_switch( data ):
 
 
 
+## \brief return the status of the service. 
 def srv_reach_random_pos_status( data ):
-	'''
-	Return the status of this service node
-	'''
 	global service_active, actual_position, target_position, last_response_check_pos, signal_last_pos
 	
 	msg = reach_random_pos_statusResponse( )
@@ -215,18 +257,20 @@ def srv_reach_random_pos_status( data ):
 
 
 
-# --------------------------------- TOPICS
-
-## ...
-
-
-
 # --------------------------------- WORKING CYCLE
 
+## 
+#	@brief The algorithm of the node. 
+#	
+#	\details
+#		This 'main' function contains the working algorithm of the node. Its functioning can be summarized as follows: <br>
+#       <ul>
+#       <li> if the robot is moving, check the position ad evaluate the distance. If the distance is under the tolerance, set the is_moving flag to false. </li> 
+#       <li> If the robot is not moving, but no last_pos_signal is raised, gather a new position and set is_moving true; the cycle begins again. </li> 
+#       <li> If the robot is not moving and the signal_last_pos is on, turn off the node. </li> 
+#       </ul>
+#
 def main():
-	'''
-	some word about the main function.
-	'''
 	global service_active, cycle_time, target_position, is_moving
 	global name_get_point, srv_get_point
 	global last_response_check_pos, signal_last_pos
@@ -272,10 +316,8 @@ def main():
 
 # --------------------------------- NODE
 
+## This is called on the shutdown of the node. 
 def cbk_on_shutdown():
-	'''
-	This is called on the shutdown of the node. 
-	'''
 	rospy.loginfo( " [%s] is OFFLINE", node_name )
 
 
@@ -316,6 +358,4 @@ if __name__ == "__main__":
 		rospy.loginfo( " [%s] is ONLINE", node_name )
 		main()
 	except rospy.ROSException:
-		# ... properly manage the exception
-		# https://docs.python.org/3/tutorial/errors.html
 		rospy.loginfo( " [%s] Raised an Exception ... ", node_name )
