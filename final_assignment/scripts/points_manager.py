@@ -84,7 +84,7 @@ def shut_msg():
 
 if __name__ == "__main__":
 	rospy.init_node( node_name )
-	rospy.on_shutdown( cbk_on_shutdown )
+	rospy.on_shutdown( shut_msg )
 	
 	random.seed( datetime.now( ) )
 	

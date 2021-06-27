@@ -93,7 +93,7 @@ last_response_check_pos = check_positionResponse( )
 
 
 ## tolerance on the distance from the target
-min_distance_from_the_target = 2
+min_distance_from_the_target = 0.5
 
 ## time between two cycles
 cycle_time = rospy.Duration( 0, 500 )

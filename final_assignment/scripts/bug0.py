@@ -274,7 +274,7 @@ def srv_bug0_status( empty ):
 	to_return.status = state_
 	to_return.active = service_active
 	to_return.distance = err_pos
-	to_return.reached = ( err_tolerance < max_tolerance_target )
+	to_return.reached = ( err_pos < max_tolerance_target )
 	
 	return to_return
 

@@ -199,17 +199,19 @@ The same, using bug0. Note well: the algorithm is not so efficient as the other 
 
 ```
 -> 5
-[INFO] [1624772864.147900, 87.919000]: [user_console] actually you're using this motion planning algorithm: 'move_base' 
+[INFO] [1624784291.929529, 169.807000]: [user_console] actually you're using this motion planning algorithm: 'move_base' 
 [user_console] would you like to change with this? 'bug0' [Y/n]
-[Y/n]Y
-[INFO] [1624772865.643323, 89.277000]: [user_console] using algorithm: 'bug0' 
+[Y/n]y
+[INFO] [1624784293.326135, 171.101000]: [user_console] using algorithm: 'bug0' 
 -> 2
-[INFO] [1624772898.443514, 119.536000]:  [user console] Give me a target:
+[INFO] [1624784297.949059, 175.356000]:  [user console] Give me a target:
 available: [(-4,-3);(-4,2);(-4,7);(5,-7);(5,-3);(5,1)]
 	x : -4
-	y : 2
-[INFO] [1624772904.473645, 125.154000]:  [user console] selected: ( -4.000000, 2.000000 )
-[INFO] [1624772904.475942, 125.155000]:  [user_console] reaching the position... 
+	y : -3
+[INFO] [1624784306.264008, 183.028000]:  [user console] selected: ( -4.000000, -3.000000 )
+[INFO] [1624784306.265668, 183.028000]:  [user_console] reaching the position... 
+[INFO] [1624784356.586834, 229.401000]:  [user_console] Arrived. 
+-> 
 ```
 
 Of course, you cannot use this command when another background process is running.
