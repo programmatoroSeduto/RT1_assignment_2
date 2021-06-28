@@ -72,13 +72,13 @@ First of all, launch the simulation environment. You can ignore the large amount
 roslaunch final_assignment start.launch
 ```
 
-Done this, launch another terminal and type this:
+Done that, launch another terminal and type this:
 
 ```bash
 roslaunch final_assignment final_assignment.launch
 ```
 
-This will launch the command line interface and all the other components. See the documentation, section *services*, for further informations about these components. Remember that you can interact with them via `rosservice call` if you note something strange during the simulation. 
+This will launch the command line interface and all the other components. See the documentation, section *services*, for further informations about these components. Remember that you can interact with them via `rosservice call` if , for instance, you note something strange during the simulation, or for simple curiosity. 
 
 At this point, you can start typing commands. See the documentation, section *Command Line Interface*, for further infos about the commands. If you don't want to bother in reading documentation, simply type `help` and start playing with it. Have fun!
 
@@ -99,6 +99,10 @@ The package *final_assignment* contains:
 ## Architecture of the project
 
 The project needs the nodes you can find in the [final_assignment.launch](https://github.com/programmatoroSeduto/RT1_assignment_2/blob/main/final_assignment/launch/final_assignment.launch) launch file. Note the structure of this file, splitted in mainly two parts: start of the services, and then start of the command line interface. 
+
+### RosGraph
+
+You can find [here](https://programmatoroseduto.github.io/RT1_assignment_2/d4/d8f/rosgraph_page.html) the ROS graph of the project. 
 
 ### wall_follow_service_m.py (original version)
 
@@ -258,9 +262,3 @@ Services in use:
 - */position_defined* : functionalities 1 and 2
 - */bug0_switch* : functionalities 1, 2 and 4 when using bug0 as motion planning algorithm
 - */bug0_status* : functionality 2 using bug0 as motion planning algorithm
-
-### RosGraph
-
-Here is the rosgraph of the project:
-
-![rosgraph](./docs/images/rosgraph.png)
