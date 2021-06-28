@@ -164,8 +164,6 @@ The nodes *reach_random_pos_service.py* and *bug0.py* are both switchable, and h
 
 *check_position.py* implements a general-purpose service, used in many points of the program. Indeed it became ad independent node because of that. 
 
-A massive use of *best practises* has been made of, in order to avoid the human error as much as possible. See the documentation, section [Services](https://programmatoroseduto.github.io/RT1_assignment_2/df/dd0/services.html). As you can note reading my source code, many nodes have the same structure.
-
 ### wall_follow_service_m.py (original version)
 
 This node implements the wall_follow behaviour. 
