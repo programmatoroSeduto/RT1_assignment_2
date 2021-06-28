@@ -182,6 +182,17 @@ include_directories(
 #   scripts/my_python_script
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
+catkin_install_python(PROGRAMS
+  scripts/bug0.py
+  scripts/check_position.py
+  scripts/go_to_point_service_m.py
+  scripts/points_manager.py
+  scripts/reach_random_pos_service.py
+  scripts/reach_user_pos_service.py
+  scripts/user_console.py
+  scripts/wall_follow_service_m.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
