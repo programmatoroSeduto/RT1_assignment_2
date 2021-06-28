@@ -8,13 +8,13 @@ Robotics Engineering - A.A. 2020/2021
 > - My gitHub : [programmatoroSeduto](https://github.com/programmatoroSeduto/) 
 > - Project repo : [RT1 - Assignment 2 Repo](https://github.com/programmatoroSeduto/RT1_assignment_2.git)
 > - **ROS version** : *Noetic*
-> - language : *Python*
+> - languages : *Python*
 > - Take a look at my **VIDEO DEMO** : [video demo here!](https://drive.google.com/file/d/1AQQ51eeMmpt2FT_Vw5nCcbXFsyMsiSpH/view?usp=sharing)
 
 # About the project - Documentation
 
-- \ref README.md "Readme"
-- \ref howto-commands "HOWTO - Command Line Interface"
+- \ref README.md "Readme" - [GitHub Readme](https://github.com/programmatoroSeduto/RT1_assignment_2/blob/main/README.md)
+- \ref howto-commands "HOWTO - Command Line Interface" [GitHub HOWTO commands](https://github.com/programmatoroSeduto/RT1_assignment_2/blob/main/docs/How%20to%20Use%20the%20Command%20Line.md)
 - \subpage rosgraph_page "ROS graph of the project" 
 
 # Code and Components

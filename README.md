@@ -7,7 +7,6 @@
 > 
 > Doxygen Documentation: 
 > - [Doxygen Documentation here]()
-> - better: **branch _gh-pages_**, download from there.
 
 # How to set up the project
 
@@ -99,7 +98,7 @@ The package *final_assignment* contains:
 
 ## Architecture of the project
 
-The project needs the nodes you can find in the [final_assignment.launch](https://github.com/programmatoroSeduto/RT1_assignment_2/blob/main/final_assignment/launch/final_assignment.launch) launch file. Note the structure of this file, splitted in two parts: srtart the services, and start the command line interface. 
+The project needs the nodes you can find in the [final_assignment.launch](https://github.com/programmatoroSeduto/RT1_assignment_2/blob/main/final_assignment/launch/final_assignment.launch) launch file. Note the structure of this file, splitted in mainly two parts: start of the services, and then start of the command line interface. 
 
 ### wall_follow_service_m.py (original version)
 
