@@ -1,5 +1,7 @@
 \page howto-commands Command Line Interfaces - Commands 
 
+\ref index "Back to Home"
+
 # Command Line Interface of the project - an Overview
 
 ## Available Functionalities

@@ -51,7 +51,7 @@ PROJECT_BRIEF          = "Research Track part 1 - Assignment 2 - RobEng A.A. 202
 # pixels and the maximum width should not exceed 200 pixels. Doxygen will copy
 # the logo to the output directory.
 
-PROJECT_LOGO           = "C:/Users/Canfresco/Desktop/ROS1/assignment 2/assignment_2/final_assignment/docs/images/300-ros-logo.png"
+PROJECT_LOGO           =
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) path
 # into which the generated documentation will be written. If a relative path is
