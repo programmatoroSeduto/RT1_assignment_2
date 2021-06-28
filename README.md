@@ -80,8 +80,9 @@ cd ~
 
 ## === workspace creation === ##
 mkdir RT1_final_assignment_ws
-cd RT1_final_assignment_ws
+cd ./RT1_final_assignment_ws
 mkdir src
+cd ./src
 
 ## === dependencies === ##
 git clone https://github.com/CarmineD8/slam_gmapping.git -b noetic
