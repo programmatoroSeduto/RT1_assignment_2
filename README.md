@@ -3,7 +3,7 @@
 **Francesco Ganci - 4143910** - Robotics Engineering - A.A. 2020/2021
 
 > Take a look at the video demo of the project!
-> - [video demo here](https://drive.google.com/file/d/1AQQ51eeMmpt2FT_Vw5nCcbXFsyMsiSpH/view?usp=sharing)
+> - [Video demo here](https://drive.google.com/file/d/1AQQ51eeMmpt2FT_Vw5nCcbXFsyMsiSpH/view?usp=sharing)
 > 
 > Doxygen Documentation: 
 > - [Doxygen Documentation here](https://programmatoroseduto.github.io/RT1_assignment_2/)
@@ -120,7 +120,7 @@ This will launch the command line interface and all the other components. See th
 
 At this point, you can start typing commands. See the documentation, section *Command Line Interface*, for further infos about the commands. If you don't want to bother in reading documentation, simply type `help` and start playing with it. Have fun!
 
-# Structure of the project
+# The project
 
 ## Package File System
 
@@ -134,6 +134,17 @@ The package *final_assignment* contains:
 - **urdf** : description of a robot with noisy odometry
 - **worlds** : the description of the environment in which the robot moves
 
+## Expected behaviour
+
+This project aims at controlling a mobile robot with bad odometry. The wrong base odometry is adjusted by SLAM-GMapping components before entering in the nodes of this project. Moreover, the robot is controlled by command line interface by the user (let's say, the user has a remote control to drive the robot). 
+
+Mainly 4 functionalities are implemented:
+
+- **Exporation** : the robot randomly chooses a target (uniform distribution) and tries and reach it. In the meanwhile, the SLAM_GMapping component uses the measurements from laser sensors (topc */scan*) in order to build a map of the environment. If you want, you can save the generated map using the package [Map Server](http://wiki.ros.org/map_server). The command is implemented as _background task_, so the console can decide when to stop the task (see documentation about [Command Line Interface](https://programmatoroseduto.github.io/RT1_assignment_2/d2/d3d/howto-commands.html))
+- **Goal Reaching** : the user can indicate a point to be reached by the robot. Foreground task, see the [documentation](https://programmatoroseduto.github.io/RT1_assignment_2/d2/d3d/howto-commands.html)
+- **wall follow** : the robot uses the component _wall_follower_service_m.py_ and moves it following the walls of the environment. This is another background process, so the user can decide when to stop it. See the [documentation](https://programmatoroseduto.github.io/RT1_assignment_2/d2/d3d/howto-commands.html) for further details.
+- **Two motion planning algorithms** : the command line interface can decide which motion planning algorithm to use. Two algorithms are available: *bug0* provided along the base of the project, and *move_base* which is a path planner capable of working along with SLAM-GMapping. The user can decide which algorithm to use from the [Command Line Interface](https://programmatoroseduto.github.io/RT1_assignment_2/d2/d3d/howto-commands.html).
+
 ## Architecture of the project
 
 The project needs the nodes you can find in the [final_assignment.launch](https://github.com/programmatoroSeduto/RT1_assignment_2/blob/main/final_assignment/launch/final_assignment.launch) launch file. Note the structure of this file, splitted in mainly two parts: start of the services, and then start of the command line interface. 
@@ -141,6 +152,19 @@ The project needs the nodes you can find in the [final_assignment.launch](https:
 ### RosGraph
 
 You can find [here](https://programmatoroseduto.github.io/RT1_assignment_2/d4/d8f/rosgraph_page.html) the ROS graph of the project. 
+
+### Architectural Motivations
+
+The center of the program is the command line interface, implemented in the node *user_console.py*. 
+I preferred to integrate the project with the already existent base project([here](https://github.com/CarmineD8/final_assignment) is the link) with as less changes as possible, simply adding functionalities. Only the node *bug0.py* required a little effort in order to make it suitable to the project. 
+
+Functionality 1 requres a *parallel execution*: the console must be free while the robot is going around in the environment. For that reason, the first functionality wal implemented in two separated nodes, *reach_random_pos_service.py* for the move_base motion planning algorithm, and *bug0.py* for the bug0 motion planning algorithm. Note that bug0 is also compatible with the second functionality, because it gets the target from the parameter server (I preferred to preserve this behaviour, otherwise I would have had even to change the other two components *wall_follow_service_m.py* and *go_to_point_service_m.py*), whereas the node *readh_random_pos_service.py* is not. As workaround for this, I created another (simple) node, *reach_user_pos_service.py* which has the only purpose to communicate to *move_base* a goal from the service called via command line. 
+
+The nodes *reach_random_pos_service.py* and *bug0.py* are both switchable, and have a status service (see the documentation). 
+
+*check_position.py* implements a general-purpose service, used in many points of the program. Indeed it became ad independent node because of that. 
+
+A massive use of *best practises* has been made of, in order to avoid the human error as much as possible. See the documentation, section [Services](https://programmatoroseduto.github.io/RT1_assignment_2/df/dd0/services.html). As you can note reading my source code, many nodes have the same structure.
 
 ### wall_follow_service_m.py (original version)
 
@@ -300,3 +324,15 @@ Services in use:
 - */position_defined* : functionalities 1 and 2
 - */bug0_switch* : functionalities 1, 2 and 4 when using bug0 as motion planning algorithm
 - */bug0_status* : functionality 2 using bug0 as motion planning algorithm
+
+# Future Improvements
+
+Here are some aspects to be improved:
+
+- Re-factoring on *reach_random_pos_service.py* in a way such that it can also realise the second functionality.
+- Make the second functionality in background instead of in foreground
+- Implement strategies for understanding if the robot is truly doing progresses towards the target. Indeed you can notice that sometimes, using *bug0* motion planning algorithm, the robot gest stuck in a cycle. This desn't happen (as I seen after some test) when the map is completed. Actually the project hasn't such strategies implemented. 
+- The command *last_pos* using *move_base* should cause the robot to immediately interrupt using *actions*.
+- Making the components of *bug0* to get the target without using the parameter server; doing this, the code inside _bug0.py_ become simpler. 
+
+For sure, there are other aspects which require a bit of work. 
