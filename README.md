@@ -26,7 +26,6 @@ Copy the packages into the workspace you prefer. **use branch : _noetic_**
 
 
 ```bash
-## from 'src' folder
 git clone https://github.com/CarmineD8/slam_gmapping.git -b noetic
 ```
 
@@ -54,7 +53,6 @@ In the repository [here](https://github.com/CarmineD8/robot_description) you can
 Copy the packages inside the workspace you prefer. **use branch : _noetic_**
 
 ```bash
-## from 'src' folder
 git clone https://github.com/CarmineD8/robot_description -b noetic
 ```
 
@@ -64,6 +62,10 @@ git clone https://github.com/CarmineD8/robot_description -b noetic
 
 2. Download the repository [here](https://github.com/programmatoroSeduto/RT1_assignment_2.git), then add in your *src* folder the package *final_assignment*
 
+```bash
+git clone https://github.com/programmatoroSeduto/RT1_assignment_2.git -b main final_assignment
+```
+
 3. Go to the root of the workspace, and from there launch `catkin_make`
 
 4. Restart the console. That's all! 
@@ -72,24 +74,26 @@ Here is the complete code:
 
 ```bash
 #! /bin/bash
+
+## === from your 'home' folder === ##
 cd ~
 
-## === workspace creation, from home ===
+## === workspace creation === ##
 mkdir RT1_final_assignment_ws
 cd RT1_final_assignment_ws
 mkdir src
 
-## === dependencies ===
+## === dependencies === ##
 git clone https://github.com/CarmineD8/slam_gmapping.git -b noetic
 git clone https://github.com/CarmineD8/robot_description -b noetic
 # sudo apt-get install ros-noetic-openslam-gmapping
 # sudo apt-get install ros-noetic-navigation
 # sudo apt-get install ros-noetic-move-base
 
-## === clone the project ===
+## === clone the project === ##
 git clone https://github.com/programmatoroSeduto/RT1_assignment_2.git -b main final_assignment
 
-## === final build ===
+## === final build === ##
 cd ..
 catkin_make
 ```
@@ -102,14 +106,12 @@ Inside the package, in the folder *launch*, you can find several launch files. B
 First of all, launch the simulation environment. You can ignore the large amount of warnings on the console: if Gazebo and Rviz run well, you need nothing else. Otherwise, close everything and relaunch. 
 
 ```bash
-## === simulation environment ===
 roslaunch final_assignment start.launch
 ```
 
 Done that, launch another terminal and type this:
 
 ```bash
-## === the project ===
 roslaunch final_assignment final_assignment.launch
 ```
 
