@@ -14,7 +14,7 @@ Robotics Engineering - A.A. 2020/2021
 # About the project - Documentation
 
 - \ref README.md "Readme" - [GitHub Readme](https://github.com/programmatoroSeduto/RT1_assignment_2/blob/main/README.md)
-- \ref howto-commands "HOWTO - Command Line Interface" [GitHub HOWTO commands](https://github.com/programmatoroSeduto/RT1_assignment_2/blob/main/docs/How%20to%20Use%20the%20Command%20Line.md)
+- \ref howto-commands "HOWTO - Command Line Interface" - [GitHub HOWTO commands](https://github.com/programmatoroSeduto/RT1_assignment_2/blob/main/docs/How%20to%20Use%20the%20Command%20Line.md)
 - \subpage rosgraph_page "ROS graph of the project" 
 
 # Code and Components
